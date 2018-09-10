@@ -33,6 +33,17 @@ void note_start(uint8_t i2c_addr, uint8_t channel, uint8_t note)
 	twi_writeTo(i2c_addr, data, sizeof(data), 1);
 }
 
+void hz_start(uint8_t i2c_addr, uint8_t channel, float hz)
+{
+	uint8_t data[5];
+	data[0] = channel;
+	data[1] = CMD_HZ_START;
+	data[2] = (uint16_t)(hz/256);
+	data[3] = (uint16_t)(hz) && 0xff;
+	data[4] = (uint16_t)(hz*256) && 0xff;
+	twi_writeTo(i2c_addr, data, sizeof(data), 1);
+}
+
 void waveform_set(uint8_t i2c_addr, uint8_t wf)
 {
 	uint8_t data[2];
@@ -49,6 +60,16 @@ void buffervalue_set(uint8_t i2c_addr, uint16_t buffer_index, uint8_t buffer_dat
 	data[2] = buffer_index >> 8;
 	data[3] = buffer_index & 0xff;
 	data[4] = buffer_data;
+	twi_writeTo(i2c_addr, data, sizeof(data), 1);
+}
+
+void volume_set(uint8_t i2c_addr, uint8_t channel, uint8_t volume)
+{
+	uint8_t data[4];
+	data[0] = 0;
+	data[1] = CMD_VOLUME_SET;
+	data[2] = channel;
+	data[3] = volume;
 	twi_writeTo(i2c_addr, data, sizeof(data), 1);
 }
 

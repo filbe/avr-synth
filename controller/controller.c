@@ -22,6 +22,8 @@ volatile uint8_t usart_rx_buf_available = 0;
 volatile uint8_t fe_reset = 0;
 volatile uint8_t fe_first = 0;
 
+volatile uint8_t lastnote = 0;
+
 
 void USART_Init( unsigned int ubrr)
 {
@@ -143,10 +145,17 @@ int main(void)
 
 			midi_read_buffer(midi);
 
-			if (midi[0] >= 0x90 || midi[0] <= 0xa0) {
+			if (midi[0] >= 0x90 || midi[0] <= 0x91) {
 	
-				if (midi[1] != 0 && midi[2] != 0)
-					note_start(1, 0, midi[1]);
+				if (midi[1] >> 7 != 1) {
+					if (midi[2] != 0) {
+						note_start(1, 0, midi[1]);
+						lastnote = midi[1];
+					} else if (midi[1] == lastnote) {
+						note_stop(1, 0);
+					}
+					
+				}
 				
 			}
 

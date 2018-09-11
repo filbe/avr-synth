@@ -22,8 +22,57 @@ volatile uint8_t usart_rx_buf_available = 0;
 volatile uint8_t fe_reset = 0;
 volatile uint8_t fe_first = 0;
 
-volatile uint8_t lastnote = 0;
+struct stack {
+	uint8_t data[24];
+	int8_t top;
+} available_channel_stack;
 
+
+volatile int8_t keyboard_note_channel[140];
+
+void polyphony_init()
+{
+	available_channel_stack.top = -1;
+	for (uint8_t i = 0; i < 24; i++) {
+		polyphony_put_free_channel(23 - i);
+	}
+	for (uint8_t i = 0; i < 140; i++) {
+		keyboard_note_channel[i] = -1;
+	}
+}
+
+int polyphony_get_free_channel()
+{
+	if (available_channel_stack.top == -1)
+		return -1;
+	uint8_t ret = available_channel_stack.data[available_channel_stack.top];
+	available_channel_stack.top--;
+	return ret;
+}
+
+void polyphony_put_free_channel(uint8_t channel)
+{
+	available_channel_stack.top++;
+	available_channel_stack.data[available_channel_stack.top] = channel;
+}
+
+void polyphone_free_channel_by_note(uint8_t note)
+{
+	note_stop(keyboard_note_channel[note] / 3 + 1, keyboard_note_channel[note] % 3);
+	polyphony_put_free_channel(keyboard_note_channel[note]);
+	keyboard_note_channel[note] = -1;
+}
+
+void polyphony_play_note(uint8_t note, uint8_t volume)
+{
+	uint8_t freechan = polyphony_get_free_channel();
+	if (freechan != -1) {
+		keyboard_note_channel[note] = freechan;
+		note_start(freechan / 3 + 1, freechan % 3, note);
+		volume_set(freechan / 3 + 1, freechan % 3, volume);
+	}
+
+}
 
 void USART_Init( unsigned int ubrr)
 {
@@ -65,7 +114,7 @@ void midi_read_buffer(uint8_t * out)
 		usart_rx_buf_read_cursor = (usart_rx_buf_read_cursor + 1) % USART_RX_BUF_SIZE;
 		out[1] = usart_rx_buf[usart_rx_buf_read_cursor]; usart_rx_buf[usart_rx_buf_read_cursor] = 0;
 		usart_rx_buf_read_cursor = (usart_rx_buf_read_cursor + 1) % USART_RX_BUF_SIZE;
-		while(!midi_available()) {}; usart_rx_buf_available -= 2;		
+		while (!midi_available()) {}; usart_rx_buf_available -= 2;
 		out[2] = usart_rx_buf[usart_rx_buf_read_cursor]; usart_rx_buf[usart_rx_buf_read_cursor] = 0;
 		usart_rx_buf_read_cursor = (usart_rx_buf_read_cursor + 1) % USART_RX_BUF_SIZE;
 	} else {
@@ -83,6 +132,8 @@ void midi_read_buffer(uint8_t * out)
 
 int main(void)
 {
+
+	polyphony_init();
 	for (float i = 0; i < MIDI_NOTES_COUNT; i += 1.0) {
 		midi[(uint8_t)(i)] = pow(2.0, (i - 69.0) * 0.083333) * 440.0;
 	}
@@ -103,23 +154,30 @@ int main(void)
 	n[6] = 60;
 	n[7] = 55;
 
-	samplerate_set(1, 20000);
+	samplerate_set(1, 10000);
 	samplerate_set(2, 20000);
-	samplerate_set(3, 5000);
-	samplerate_set(4, 5000);
-	samplerate_set(5, 10000);
-	samplerate_set(6, 10000);
-	samplerate_set(7, 10000);
-	samplerate_set(8, 10000);
+	samplerate_set(3, 20000);
+	samplerate_set(4, 20000);
+	samplerate_set(5, 20000);
+	samplerate_set(6, 20000);
+	samplerate_set(7, 20000);
+	samplerate_set(8, 20000);
 
 	waveform_set(1, 2);
+	waveform_set(2, 2);
+	waveform_set(3, 2);
+	waveform_set(4, 2);
+	waveform_set(5, 2);
+	waveform_set(6, 2);
+	waveform_set(7, 2);
+	waveform_set(8, 2);
 
 
 
 	for (uint16_t i = 0; i < 256; i++) {
 		uint16_t bv = 0;
 
-
+		/*
 		bv += sin(2 * i / 256.0 * M_PI) * 127 + 127;
 		bv += sin(4 * i / 256.0 * M_PI) * 63 + 127;
 		bv += sin(8 * i / 256.0 * M_PI) * 127 + 127;
@@ -130,9 +188,19 @@ int main(void)
 		bv += sin(256 * i / 256.0 * M_PI) * 127 + 127;
 		bv += sin(512 * i / 256.0 * M_PI) * 63 + 127;
 
+
+		bv += sin(2 * i / 256.0 * M_PI) * 127 + 127;
+
 		buffervalue_set(1, i, bv / 7);
 		buffervalue_set(2, i, bv / 7);
-		//_delay_ms(1);
+		buffervalue_set(3, i, bv / 7);
+		buffervalue_set(4, i, bv / 7);
+		buffervalue_set(5, i, bv / 7);
+		buffervalue_set(6, i, bv / 7);
+		buffervalue_set(7, i, bv / 7);
+		buffervalue_set(8, i, bv / 7);
+		_delay_ms(1);
+		*/
 	}
 
 
@@ -146,17 +214,16 @@ int main(void)
 			midi_read_buffer(midi);
 
 			if (midi[0] >= 0x90 || midi[0] <= 0x91) {
-	
+
 				if (midi[1] >> 7 != 1) {
 					if (midi[2] != 0) {
-						note_start(1, 0, midi[1]);
-						lastnote = midi[1];
-					} else if (midi[1] == lastnote) {
-						note_stop(1, 0);
+						polyphony_play_note(midi[1], midi[2]);
+					} else {
+						polyphone_free_channel_by_note(midi[1]);
 					}
-					
+
 				}
-				
+
 			}
 
 

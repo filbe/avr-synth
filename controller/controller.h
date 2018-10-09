@@ -18,4 +18,6 @@
 
 float midi[MIDI_NOTES_COUNT];
 
+void polyphone_put_free_channel(uint8_t channel);
+
 #endif /* __AVR_SYNTH__CONTROLLER__ */

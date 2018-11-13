@@ -43,33 +43,40 @@ int main(void)
 	_delay_ms(1000);
 
 
-	uint8_t pitch, volume, waveform, pitchex, volumeex, waveformex;
+	uint8_t  waveform, waveformex;
 	uint16_t samplerate, samplerateex;
+	uint32_t flanger_speed, flanger_depth, flanger_speedex, flanger_depthex;
 	while (1) {
-		pitch = adc_read(0) >> 3;
-		volume = adc_read(1) >> 2;
+		flanger_speed = adc_read(0) * 4;
+		flanger_depth = adc_read(1) / 4;
 		samplerate = adc_read(2) * 39;
 		waveform = adc_read(3) / 256;
 
-		if (pitch != pitchex) {
-			note_start(1, 0, pitch);
-			pitchex = pitch;
+		if (flanger_speed != flanger_speedex) {
+			flanger_speed_set(flanger_speed);
+			flanger_speedex = flanger_speed;
 		}
 		if (waveform != waveformex) {
-			waveform_set(1, waveform);
+			for (uint8_t i = 1; i <= 8; i++) {
+				waveform_set(i, waveform);
+			}
+
 			waveformex = waveform;
 		}
-		if (volume != volumeex) {
-			volume_set(1, 0, volume);
-			volumeex = volume;
+		if (flanger_depth != flanger_depthex) {
+			flanger_depth_set(flanger_depth);
+			flanger_depthex = flanger_depth;
+
 		}
 		if (samplerate != samplerateex) {
-			samplerate_set(1, samplerate);
-			note_start(1, 0, pitch);
+			for (uint8_t i = 1; i <= 8; i++) {
+				samplerate_set(i, samplerate);
+
+			}
 			samplerateex = samplerate;
 		}
-		
-		
+
+
 		_delay_ms(30);
 	}
 

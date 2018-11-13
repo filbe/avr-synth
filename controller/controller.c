@@ -60,6 +60,11 @@ int polyphone_get_free_channel()
 	available_channel_stack.length--;
 	uint8_t ret = available_channel_stack.data[available_channel_stack.tail];
 	available_channel_stack.tail = (available_channel_stack.tail + 1) % available_channel_stack.total_length;
+	if (ret > 24) {
+		while(1) {
+			
+		}
+	}
 	return ret;
 }
 
@@ -196,32 +201,7 @@ int main(void)
 	}
 	
 
-	for (uint16_t i = 0; i < 256; i++) {
-		uint16_t bv = 0;
 
-		/*
-		bv += sin(2 * i / 256.0 * M_PI) * 127 + 127;
-		bv += sin(4 * i / 256.0 * M_PI) * 127 + 127;
-		bv += sin(8 * i / 256.0 * M_PI) * 127 + 127;
-		bv += sin(16 * i / 256.0 * M_PI) * 127 + 127;
-		bv += sin(32 * i / 256.0 * M_PI) * 127 + 127;
-		bv += sin(64 * i / 256.0 * M_PI) * 63 + 127;
-		bv += sin(128 * i / 256.0 * M_PI) * 63 + 127;
-		bv += sin(256 * i / 256.0 * M_PI) * 63 + 127;
-		bv += sin(512 * i / 256.0 * M_PI) * 63 + 127;
-		bv = bv / 7;	
-	*/
-		bv += sin(2*i/256.0*M_PI)*127+127;
-
-		buffervalue_set(1, i, bv);
-		buffervalue_set(2, i, bv);
-		buffervalue_set(3, i, bv);
-		buffervalue_set(4, i, bv);
-		buffervalue_set(5, i, bv);
-		buffervalue_set(6, i, bv);
-		buffervalue_set(7, i, bv);
-		buffervalue_set(8, i, bv);
-	}
 
 	uint8_t midi[3];
 
@@ -238,7 +218,7 @@ int main(void)
 					} else {
 						polyphone_free_channel_by_note(midi[1]);
 					}
-					note_start(10,0,available_channel_stack.total_length - available_channel_stack.length);
+					//note_start(10,0,available_channel_stack.total_length - available_channel_stack.length);
 
 				}
 

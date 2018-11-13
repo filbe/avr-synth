@@ -130,3 +130,22 @@ void samplerate_set(uint8_t i2c_addr, uint16_t samplerate)
 	twi_writeTo(i2c_addr, data, sizeof(data), 1);
 }
 
+void flanger_speed_set(uint32_t speed)
+{
+	uint8_t data[4];
+	data[0] = 0x11;
+	data[1] = (speed >> 16) & 0xff;
+	data[2] = (speed >> 8) & 0xff;
+	data[3] = speed & 0xff;
+	twi_writeTo(0x20, data, sizeof(data), 1);
+}
+
+void flanger_depth_set(uint32_t depth)
+{
+	uint8_t data[4];
+	data[0] = 0x21;
+	data[1] = (depth >> 16) & 0xff;
+	data[2] = (depth >> 8) & 0xff;
+	data[3] = depth & 0xff;
+	twi_writeTo(0x20, data, sizeof(data), 1);
+}
